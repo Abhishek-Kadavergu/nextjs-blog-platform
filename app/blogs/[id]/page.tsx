@@ -1,20 +1,17 @@
 "use client";
+
 import { assets, blog_data } from "@/Assets/assets";
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Footer from "@/components/Footer";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 
-interface PageProps {
-  params: {
-    id: string;
-  };
-}
+const Page = () => {
+  const params = useParams();
+  const id = params?.id as string;
 
-const Page = ({ params }: PageProps) => {
-  const { id } = params;
   type Blog = (typeof blog_data)[0];
-
   const [data, setData] = useState<Blog | undefined>();
 
   useEffect(() => {
