@@ -3,15 +3,11 @@ import { NextRequest, NextResponse } from "next/server"
 import { writeFile } from "fs/promises";
 import BlogModel from "@/lib/models/BlogModel";
 
-const LoadDB = async () => {
-    ConnectDB();
-}
-
-LoadDB()
 
 // GET /api/blog
-export async function GET(request: NextRequest): Promise<NextResponse> {
+export async function GET(): Promise<NextResponse> {
   try {
+    await ConnectDB();
     const blogs = await BlogModel.find();
     return NextResponse.json({ success: true, blogs });
   } catch (err) {
@@ -20,30 +16,27 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   }
 }
 
-
 // POST /api/blog
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  const formData = await request.formData();
-  const timestamp = Date.now();
+  try {
+    await ConnectDB();
 
-  const image = formData.get("image") as File;
+    const formData = await request.formData();
+    const timestamp = Date.now();
 
-  if (!image) {
-    return NextResponse.json({ error: "No image uploaded" }, { status: 400 });
-  }
+    const image = formData.get("image") as File;
+    if (!image) {
+      return NextResponse.json({ error: "No image uploaded" }, { status: 400 });
+    }
 
-  const imageByteData = await image.arrayBuffer();
-  const buffer = Buffer.from(imageByteData);
+    const imageByteData = await image.arrayBuffer();
+    const buffer = Buffer.from(imageByteData);
+    const fileName = `${timestamp}_${image.name}`;
+    const filePath = `./public/${fileName}`;
+    await writeFile(filePath, buffer);
+    const imgUrl = `/${fileName}`;
 
-  const fileName = `${timestamp}_${image.name}`;
-  const filePath = `./public/${fileName}`;
-
-  await writeFile(filePath, buffer);
-
-  const imgUrl = `/${fileName}`;
-  console.log("Image URL:", imgUrl);
-
-  const authorImgFile = formData.get("authorImg") as File;
+    const authorImgFile = formData.get("authorImg") as File;
     let authorImgUrl = "";
     if (authorImgFile && typeof authorImgFile === "object") {
       const authorImgBuffer = Buffer.from(await authorImgFile.arrayBuffer());
@@ -53,26 +46,33 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       authorImgUrl = `/${authorImgName}`;
     }
 
+    const blogData = {
+      title: formData.get("title")?.toString() || "",
+      description: formData.get("description")?.toString() || "",
+      category: formData.get("category")?.toString() || "",
+      author: formData.get("author")?.toString() || "",
+      image: imgUrl,
+      authorImg: authorImgUrl,
+    };
 
-  const blogData = {
-  title: formData.get("title")?.toString() || "",
-  description: formData.get("description")?.toString() || "",
-  category: formData.get("category")?.toString() || "",
-  author: formData.get("author")?.toString() || "",
-  image: imgUrl,
-  authorImg: authorImgUrl
-};
+    const createdBlog = await BlogModel.create(blogData);
 
-
-  const createdBlog = await BlogModel.create(blogData);
-  return NextResponse.json({success:"true",  message: "Image uploaded successfully",  id: createdBlog._id,
-  data: createdBlog});
-
+    return NextResponse.json({
+      success: "true",
+      message: "Image uploaded successfully",
+      id: createdBlog._id,
+      data: createdBlog,
+    });
+  } catch (error) {
+    console.error("POST error:", error);
+    return NextResponse.json({ error: "Failed to upload blog" }, { status: 500 });
+  }
 }
 
 // PUT /api/blog/:id
 export async function PUT(request: NextRequest): Promise<NextResponse> {
   try {
+    await ConnectDB();
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 
@@ -106,6 +106,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
 
 export async function DELETE(request: NextRequest): Promise<NextResponse> {
   try {
+    await ConnectDB();
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 
