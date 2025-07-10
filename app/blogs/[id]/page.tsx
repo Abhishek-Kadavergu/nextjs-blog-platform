@@ -1,9 +1,7 @@
 "use client";
 import { assets, blog_data } from "@/Assets/assets";
 import React, { useEffect, useState } from "react";
-import type { StaticImageData } from "next/image";
 import Image from "next/image";
-import { assert } from "console";
 import Footer from "@/components/Footer";
 import Link from "next/link";
 
