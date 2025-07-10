@@ -17,15 +17,11 @@ const Page = ({ params }: PageProps) => {
 
   const [data, setData] = useState<Blog | undefined>();
 
-  const fetchBlogData = () => {
+  useEffect(() => {
     const blogId = parseInt(id);
     const blog = blog_data.find((item) => item.id === blogId);
     setData(blog);
-  };
-
-  useEffect(() => {
-    fetchBlogData();
-  }, [fetchBlogData]);
+  }, [id]);
 
   return data ? (
     <>
